@@ -30,7 +30,7 @@ func main() {
 			fmt.Scanf("%s\n", &filename)
 			UploadFile(filename, nodeAddr)
 			duration := time.Since(start)
-			fmt.Println("\nDuration: ", duration.Nanoseconds())
+			fmt.Println("\nDuration: ", duration)
 		case 2:
 			start := time.Now()
 			fmt.Print("Enter filename to retrieve: ")
@@ -38,7 +38,7 @@ func main() {
 			fmt.Scanf("%s\n", &filename)
 			RetrieveFile(filename, nodeAddr)
 			duration := time.Since(start)
-			fmt.Println("\nDuration: ", duration.Nanoseconds())
+			fmt.Println("\nDuration: ", duration)
 		case 3:
 			fmt.Print("Exiting")
 			return
