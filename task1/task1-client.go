@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"bytes"
 	"io/ioutil"
@@ -43,7 +44,10 @@ func main() {
 			}
 			fmt.Print("Enter Filename: ")
 			fmt.Scanf("%s", &filename)
+			start := time.Now()
 			uploadFile(conn, username, filename)
+			duration := time.Since(start)
+			fmt.Println("\nDuration: ", duration)
 		case 3:
 			if username == "" {
 				fmt.Println()
@@ -52,7 +56,10 @@ func main() {
 			}
 			fmt.Print("Enter Filename: ")
 			fmt.Scanf("%s", &filename)
+			start := time.Now()
 			downloadFile(conn, username, filename)
+			duration := time.Since(start)
+			fmt.Println("\nDuration: ", duration)
 		case 4:
 			if err := conn.Close(); err != nil {
 				log.Println(err)
