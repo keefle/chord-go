@@ -24,18 +24,18 @@ func main() {
 		fmt.Scanf("%d\n", &choice)
 		switch choice {
 		case 1:
-			start := time.Now()
 			fmt.Print("Enter filename to store: ")
 			filename := ""
 			fmt.Scanf("%s\n", &filename)
+			start := time.Now()
 			UploadFile(filename, nodeAddr)
 			duration := time.Since(start)
 			fmt.Println("\nDuration: ", duration)
 		case 2:
-			start := time.Now()
 			fmt.Print("Enter filename to retrieve: ")
 			filename := ""
 			fmt.Scanf("%s\n", &filename)
+			start := time.Now()
 			RetrieveFile(filename, nodeAddr)
 			duration := time.Since(start)
 			fmt.Println("\nDuration: ", duration)
