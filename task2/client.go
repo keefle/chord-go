@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -23,15 +24,21 @@ func main() {
 		fmt.Scanf("%d\n", &choice)
 		switch choice {
 		case 1:
+			start := time.Now()
 			fmt.Print("Enter filename to store: ")
 			filename := ""
 			fmt.Scanf("%s\n", &filename)
 			UploadFile(filename, nodeAddr)
+			duration := time.Since(start)
+			fmt.Println("\nDuration: ", duration.Nanoseconds())
 		case 2:
+			start := time.Now()
 			fmt.Print("Enter filename to retrieve: ")
 			filename := ""
 			fmt.Scanf("%s\n", &filename)
 			RetrieveFile(filename, nodeAddr)
+			duration := time.Since(start)
+			fmt.Println("\nDuration: ", duration.Nanoseconds())
 		case 3:
 			fmt.Print("Exiting")
 			return
