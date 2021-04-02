@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"time"
@@ -13,7 +14,11 @@ import (
 )
 
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8080")
+	addr := ""
+	flag.StringVar(&addr, "address", "localhost:1234", "supply server ip and port")
+	flag.Parse()
+
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
 	}
