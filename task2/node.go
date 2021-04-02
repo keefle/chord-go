@@ -51,6 +51,16 @@ type UploadFileResp struct {
 	Err error
 }
 
+type ShareFilesReq struct {
+	PredID uint64
+	ID     uint64
+	Addr   string
+}
+
+type ShareFilesResp struct {
+	Err error
+}
+
 type RetrieveFileReq struct {
 	Filename string
 	ID       uint64
@@ -89,12 +99,14 @@ func (n *Node) leave(client Caller) {
 
 	var err error
 
-	err = client.Call(n.Predecessor, "SetSucc", n.Successor, "")
+	var ssr SetSuccResp
+	err = client.Call(n.Predecessor, "SetSucc", n.Successor, &ssr)
 	if err != nil {
 		log.Println(err)
 	}
 
-	err = client.Call(n.Successor, "SetPred", n.Predecessor, "")
+	var spr SetPredResp
+	err = client.Call(n.Successor, "SetPred", n.Predecessor, &spr)
 	if err != nil {
 		log.Println(err)
 	}
@@ -102,7 +114,7 @@ func (n *Node) leave(client Caller) {
 	id := n.id()
 	for fileid, filename := range n.fileTable {
 		// go func(filename string, id uint64, client Caller) {
-		buff, err := ioutil.ReadFile(strconv.FormatUint(id, 10), filename)
+		buff, err := ioutil.ReadFile(filepath.Join(strconv.FormatUint(id, 10), filename))
 		if err != nil {
 			log.Println(err)
 			continue
@@ -114,10 +126,12 @@ func (n *Node) leave(client Caller) {
 			ID:       fileid,
 		}, &UploadFileResp{})
 
-		if err := os.Remove(strconv.FormatUint(n.id(), 10), filename); err != nil {
+		if err := os.Remove(filepath.Join(strconv.FormatUint(n.id(), 10), filename)); err != nil {
 			log.Println(err)
 			return
 		}
+
+		delete(n.fileTable, fileid)
 		// }(filename, n.id(), client)
 	}
 
@@ -126,7 +140,8 @@ func (n *Node) leave(client Caller) {
 		return
 	}
 
-	client.Call(n.Predecessor, "Stabilize", n.Addr, &empty)
+	var empty string
+	client.Call(n.Predecessor, "Stabilize", n.Predecessor, &empty)
 	log.Print("sending stabalize call")
 }
 
@@ -187,7 +202,15 @@ func (n *Node) join(peeraddr string, client Caller) {
 	}
 	log.Print("calculated successor's finger table")
 
+	err = client.Call(n.Successor, "ShareFiles", ShareFilesReq{PredID: ID(n.Predecessor), ID: n.id(), Addr: n.Addr}, &ShareFilesResp{})
+	if err != nil {
+		log.Println(err)
+	}
+
 	client.Call(n.Predecessor, "Stabilize", n.Addr, &empty)
+	if err != nil {
+		log.Println(err)
+	}
 	log.Print("sending stabalize call")
 
 	// Somehow Get Related Files from successor
@@ -353,6 +376,53 @@ func (n *Node) uploadFile(uf UploadFileReq) error {
 	return nil
 }
 
+func (n *Node) shareFiles(sf ShareFilesReq, client Caller) error {
+	n.mufile.Lock()
+	defer n.mufile.Unlock()
+
+	id := n.id()
+	for fileid, filename := range n.fileTable {
+
+		switch {
+		case sf.PredID < fileid && fileid <= sf.ID:
+		case sf.PredID > sf.ID && sf.PredID < fileid:
+		case sf.PredID > sf.ID && fileid <= sf.ID:
+		default:
+			continue
+		}
+
+		buff, err := ioutil.ReadFile(filepath.Join(strconv.FormatUint(id, 10), filename))
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		client.Call(sf.Addr, "UploadFile", UploadFileReq{
+			Filename: filename,
+			Content:  buff,
+			ID:       fileid,
+		}, &UploadFileResp{})
+
+		if err := os.Remove(filepath.Join(strconv.FormatUint(n.id(), 10), filename)); err != nil {
+			log.Println(err)
+			continue
+		}
+
+		delete(n.fileTable, fileid)
+	}
+
+	return nil
+}
+
+func (n *Node) ShareFiles(sf ShareFilesReq, sfr *ShareFilesResp) error {
+	if err := n.shareFiles(sf, NewRPCCaller()); err != nil {
+		sfr.Err = err
+		return err
+	}
+
+	return nil
+}
+
 func (n *Node) UploadFile(uf UploadFileReq, ufr *UploadFileResp) error {
 	if err := n.uploadFile(uf); err != nil {
 		ufr.Err = err
@@ -419,6 +489,13 @@ func (n *Node) printFingerTable() {
 	fmt.Println("i  | address        | ID")
 	for i := 0; i < len(n.fingerTable); i++ {
 		fmt.Printf("%02d (%7d) | %v | %7d\n", i, (n.id()+uint64(math.Pow(2, float64(i))))%1048576, n.fingerTable[i], ID(n.fingerTable[i]))
+	}
+}
+
+func (n *Node) printFileTable() {
+	fmt.Println("Key     | Filename")
+	for fileid, filename := range n.fileTable {
+		fmt.Printf("(%7d) | %v\n", fileid, filename)
 	}
 }
 

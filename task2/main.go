@@ -34,6 +34,7 @@ func main() {
 
 	choice := 0
 	for {
+		fmt.Println("=====================================")
 		fmt.Println("Choose one of the following:")
 		fmt.Println("1) Enter the peer address to connect")
 		fmt.Println("2) Enter the key to find its successor")
@@ -57,10 +58,21 @@ func main() {
 			fmt.Scanf("%d", &key)
 			lr := node.lookup(key, NewRPCCaller())
 			fmt.Printf("Found: %v (%v)\n", lr.Addr, lr.ID)
+		case 3:
+			var filename string
+			fmt.Print("Enter Filename: ")
+			fmt.Scanf("%d", &filename)
+			fmt.Printf("ID: %v\n", ID(filename))
+		case 4:
+			fmt.Printf("ID (%v)\n", node.id())
+			fmt.Printf("Predecessor ID (%v)\n", ID(node.Predecessor))
+			fmt.Printf("Successor ID: (%v)\n", ID(node.Successor))
+		case 5:
+			node.printFileTable()
 		case 6:
 			node.printFingerTable()
 		case 7:
-			node.leave()
+			node.leave(NewRPCCaller())
 		}
 	}
 }
